@@ -1,0 +1,10 @@
+src/
+node_modules/
+.gitignore
+*.log
+.DS_Store
+.vscode/
+.idea/
+vite.config.js
+package-lock.json
+

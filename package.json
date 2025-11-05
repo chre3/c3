@@ -1,0 +1,42 @@
+{
+  "name": "c3-sdk",
+  "version": "1.0.1",
+  "description": "A lightweight JavaScript SDK for Google AdSense, Google Publisher Tag (GPT), and Google AdSense for Search (AFS) integration",
+  "main": "dist/c3-sdk.umd.js",
+  "module": "dist/c3-sdk.es.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "README.zh.md"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "adsense",
+    "google-adsense",
+    "google-gpt",
+    "google-afs",
+    "sdk",
+    "advertising",
+    "monetization"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chre3/c3.git"
+  },
+  "homepage": "https://github.com/chre3/c3#readme",
+  "bugs": {
+    "url": "https://github.com/chre3/c3/issues"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "terser": "^5.24.0"
+  }
+}
