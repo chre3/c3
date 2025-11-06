@@ -325,6 +325,77 @@ export const AdSense = {
     },
 
     /**
+     * Check if AdSense interstitial API is ready
+     * @returns {boolean} True if ready
+     */
+    _isInterstitialAPIReady() {
+        // Check if AdSense script is loaded
+        if (!window.adsbygoogle) {
+            return false;
+        }
+
+        // Check if script is loaded (adsbygoogle should be an array)
+        if (typeof window.adsbygoogle !== "object") {
+            return false;
+        }
+
+        // Additional check: ensure script is loaded
+        const scriptLoaded = document.querySelector(
+            'script[src*="adsbygoogle.js"]'
+        );
+        if (!scriptLoaded) {
+            return false;
+        }
+
+        return true;
+    },
+
+    /**
+     * Show preroll with retry logic
+     * @param {Function} showFn - Function to show preroll
+     * @param {number} retryCount - Current retry count
+     * @param {number} maxRetries - Maximum retries
+     */
+    _showPrerollWithRetry(showFn, retryCount = 0, maxRetries = 5) {
+        if (retryCount >= maxRetries) {
+            console.error(
+                "AdSense interstitial API not available after max retries"
+            );
+            return;
+        }
+
+        if (!this._isInterstitialAPIReady()) {
+            const delay = retryCount < 2 ? 500 : 1000;
+            setTimeout(() => {
+                this._showPrerollWithRetry(showFn, retryCount + 1, maxRetries);
+            }, delay);
+            return;
+        }
+
+        // Try to show preroll
+        try {
+            showFn();
+        } catch (e) {
+            if (
+                e.message &&
+                (e.message.includes("no interstitial API") ||
+                    e.message.includes("interstitial"))
+            ) {
+                const delay = retryCount < 2 ? 1000 : 2000;
+                setTimeout(() => {
+                    this._showPrerollWithRetry(
+                        showFn,
+                        retryCount + 1,
+                        maxRetries
+                    );
+                }, delay);
+            } else {
+                console.error("Preroll trigger failed:", e);
+            }
+        }
+    },
+
+    /**
      * Internal method to show preroll ad (for automatic triggers)
      */
     _internalShowPreroll() {
@@ -332,7 +403,7 @@ export const AdSense = {
             window.adsbygoogle = [];
         }
 
-        try {
+        const showFn = () => {
             window.adsbygoogle.push({
                 type: "preroll",
                 adBreakDone: () => {
@@ -370,9 +441,10 @@ export const AdSense = {
                 },
             });
             console.log("Preroll triggered");
-        } catch (e) {
-            console.error("Preroll trigger failed:", e);
-        }
+        };
+
+        // Use retry mechanism
+        this._showPrerollWithRetry(showFn);
     },
 
     /**
@@ -396,7 +468,7 @@ export const AdSense = {
         const afterAd = options.afterAd;
         const adBreakDone = options.adBreakDone;
 
-        try {
+        const showFn = () => {
             const prerollOption = {
                 type: "preroll",
                 beforeAd: () => {
@@ -463,9 +535,10 @@ export const AdSense = {
 
             window.adsbygoogle.push(prerollOption);
             console.log("Preroll ad triggered");
-        } catch (e) {
-            console.error("Preroll ad trigger failed:", e);
-        }
+        };
+
+        // Use retry mechanism
+        this._showPrerollWithRetry(showFn);
     },
 
     /**
