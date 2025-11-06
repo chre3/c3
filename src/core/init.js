@@ -132,10 +132,7 @@ function initializeAdSense() {
     )
         .then(() => {
             AdSense.init(config);
-
-            if (config.preloadAd) {
-                AdSense.preload();
-            }
+            AdSense.preload();
             console.log("C3 SDK initialized", config);
             return Promise.resolve();
         })

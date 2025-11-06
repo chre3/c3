@@ -914,14 +914,12 @@ export const AdSense = {
      * Preload ads
      */
     preload() {
-        if (this.config && this.config.preloadAd) {
-            window.adsbygoogle = window.adsbygoogle || [];
-            // AdSense handles preload automatically
-            window.adsbygoogle.push({
-                sound: "on",
-                preloadAdBreaks: "on",
-            });
-        }
+        window.adsbygoogle = window.adsbygoogle || [];
+        // AdSense handles preload automatically
+        window.adsbygoogle.push({
+            sound: "on",
+            preloadAdBreaks: "on",
+        });
     },
 
     /**
