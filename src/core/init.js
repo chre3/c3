@@ -33,13 +33,13 @@ export function init(options = {}) {
     config = {
         platform: options.platform,
         pubId: options.pubId || "",
-        nativeAfgSupport: options.nativeAfgSupport !== false,
+        nativeAfgSupport: options.nativeAfgSupport,
         channelId: options.channelId || "",
         useGa: options.useGa || false,
         useGtm: options.useGtm || false,
         gaMeasurementId: options.gaMeasurementId || "",
         gtmContainerId: options.gtmContainerId || "",
-        preloadAd: options.preloadAd !== false,
+        preloadAd: options.preloadAd,
         adsenseConfig: {
             // Vignette/Preroll config (AdSense only)
             vignetteConfig: (options.adsenseConfig &&
