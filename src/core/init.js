@@ -122,17 +122,37 @@ export function init(options = {}) {
  */
 function initializeAdSense() {
     // Load AdSense script
-    return loadScript(
-        "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js",
-        {
+    window.adsbygoogle = window.adsbygoogle || [];
+    let scriptUrl =
+        "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" +
+        config.pubId;
+    let scriptOptions = {
+        async: true,
+        crossOrigin: "anonymous",
+    };
+
+    if (config.nativeAfgSupport) {
+        scriptUrl =
+            "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
+        scriptOptions = {
             async: true,
             hint: "10s",
             pubId: config.pubId,
-        }
-    )
+        };
+    }
+
+    if (typeof window !== "undefined") {
+        window.adBreak = window.adConfig = function (o) {
+            window.adsbygoogle.push(o);
+        };
+    }
+
+    return loadScript(scriptUrl, scriptOptions)
         .then(() => {
             AdSense.init(config);
-            AdSense.preload();
+            if (config.preloadAd) {
+                AdSense.preload();
+            }
             console.log("C3 SDK initialized", config);
             return Promise.resolve();
         })

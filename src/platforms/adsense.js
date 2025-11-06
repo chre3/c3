@@ -20,13 +20,6 @@ export const AdSense = {
 
         // Setup Ad Placement API global functions
         // These functions are required by Google Ad Placement API for preroll and reward ads
-        if (typeof window !== "undefined") {
-            window.adBreak = window.adConfig = function (o) {
-                window.adsbygoogle = window.adsbygoogle || [];
-                window.adsbygoogle.push(o);
-            };
-        }
-
         // Setup listener if vignette/preroll management enabled
         const vignetteConfig =
             (config.adsenseConfig && config.adsenseConfig.vignetteConfig) ||
@@ -928,12 +921,10 @@ export const AdSense = {
      * Preload ads
      */
     preload() {
-        if (this.config && this.config.preloadAd) {
-            window.adConfig({
-                sound: "on",
-                preloadAdBreaks: "on",
-            });
-        }
+        window.adConfig({
+            sound: "on",
+            preloadAdBreaks: "on",
+        });
     },
 
     /**
