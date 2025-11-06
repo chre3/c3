@@ -738,7 +738,7 @@ export const AdSense = {
         ins.style.display = display;
 
         // Set ad width and height
-        if (width !== undefined) {
+        if (width) {
             if (typeof width === "number") {
                 ins.style.width = `${width}px`;
             } else {
@@ -749,7 +749,7 @@ export const AdSense = {
             ins.style.width = "100%";
         }
 
-        if (height !== undefined) {
+        if (height) {
             if (typeof height === "number") {
                 ins.style.height = `${height}px`;
             } else {
@@ -761,7 +761,7 @@ export const AdSense = {
         ins.setAttribute("data-ad-client", this.pubId);
         ins.setAttribute("data-ad-slot", adSlotId);
 
-        if (fullWidthResponsive) {
+        if (!height) {
             ins.setAttribute("data-full-width-responsive", "true");
             ins.setAttribute("data-ad-format", adFormat);
         }
