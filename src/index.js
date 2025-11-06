@@ -41,7 +41,7 @@ const C3 = {
     /**
      * SDK version
      */
-    version: "1.0.8",
+    version: "1.0.10",
 };
 
 // Mount C3 to global object in browser environment

@@ -15,6 +15,18 @@ export const AdSense = {
         this.hashChangeHandler = null;
         this.adCounter = 0; // Counter for unique ad IDs
 
+        // Initialize adsbygoogle queue
+        window.adsbygoogle = window.adsbygoogle || [];
+
+        // Setup Ad Placement API global functions
+        // These functions are required by Google Ad Placement API for preroll and reward ads
+        if (typeof window !== "undefined") {
+            window.adBreak = window.adConfig = function (o) {
+                window.adsbygoogle = window.adsbygoogle || [];
+                window.adsbygoogle.push(o);
+            };
+        }
+
         // Setup listener if vignette/preroll management enabled
         const vignetteConfig =
             (config.adsenseConfig && config.adsenseConfig.vignetteConfig) ||
@@ -400,48 +412,49 @@ export const AdSense = {
      * Internal method to show preroll ad (for automatic triggers)
      */
     _internalShowPreroll() {
-        if (!window.adsbygoogle) {
-            window.adsbygoogle = [];
-        }
-
         const showFn = () => {
-            window.adsbygoogle.push({
-                type: "preroll",
-                adBreakDone: () => {
-                    console.log("Preroll completed");
-                    // Update tracking data
-                    const tracking = this.getAdTracking();
-                    const newPrerollCount = (tracking?.prerollCount || 0) + 1;
-                    const newTotalPrerollCount =
-                        (tracking?.totalPrerollCount || 0) + 1;
+            if (window.adBreak) {
+                window.adBreak({
+                    type: "preroll",
+                    adBreakDone: () => {
+                        console.log("Preroll completed");
+                        // Update tracking data
+                        const tracking = this.getAdTracking();
+                        const newPrerollCount =
+                            (tracking?.prerollCount || 0) + 1;
+                        const newTotalPrerollCount =
+                            (tracking?.totalPrerollCount || 0) + 1;
 
-                    this.updateAdTracking({
-                        prerollCount: newPrerollCount,
-                        totalPrerollCount: newTotalPrerollCount,
-                        missedVignetteCount: 0, // Reset missed count
-                        currentCycle: "preroll",
-                    });
-
-                    // Check if preroll threshold reached, enter vignette cycle
-                    const config = this.getVignetteConfig();
-                    if (
-                        config &&
-                        newPrerollCount >= config.prerollToVignette.count &&
-                        config.prerollToVignette.count > 0
-                    ) {
-                        // Reset counts, enter vignette cycle
                         this.updateAdTracking({
-                            vignetteCount: 0,
-                            prerollCount: 0,
-                            currentCycle: "vignette",
+                            prerollCount: newPrerollCount,
+                            totalPrerollCount: newTotalPrerollCount,
+                            missedVignetteCount: 0, // Reset missed count
+                            currentCycle: "preroll",
                         });
-                        console.log(
-                            "Preroll cycle done, entering vignette cycle"
-                        );
-                    }
-                },
-            });
-            console.log("Preroll triggered");
+
+                        // Check if preroll threshold reached, enter vignette cycle
+                        const config = this.getVignetteConfig();
+                        if (
+                            config &&
+                            newPrerollCount >= config.prerollToVignette.count &&
+                            config.prerollToVignette.count > 0
+                        ) {
+                            // Reset counts, enter vignette cycle
+                            this.updateAdTracking({
+                                vignetteCount: 0,
+                                prerollCount: 0,
+                                currentCycle: "vignette",
+                            });
+                            console.log(
+                                "Preroll cycle done, entering vignette cycle"
+                            );
+                        }
+                    },
+                });
+                console.log("Preroll triggered");
+            } else {
+                console.error("window.adBreak is not available");
+            }
         };
 
         // Use retry mechanism
@@ -458,10 +471,6 @@ export const AdSense = {
      * @param {Function} options.adBreakDone - Callback when ad break done (always called)
      */
     showPreroll(options = {}) {
-        if (!window.adsbygoogle) {
-            window.adsbygoogle = [];
-        }
-
         // Callback functions
         const beforeAd = options.beforeAd;
         const adDismissed = options.adDismissed;
@@ -470,72 +479,77 @@ export const AdSense = {
         const adBreakDone = options.adBreakDone;
 
         const showFn = () => {
-            const prerollOption = {
-                type: "preroll",
-                beforeAd: () => {
-                    console.log("Preroll ad - beforeAd");
-                    if (beforeAd) {
-                        beforeAd();
-                    }
-                },
-                adDismissed: () => {
-                    console.log("Preroll ad - adDismissed");
-                    if (adDismissed) {
-                        adDismissed();
-                    }
-                },
-                adViewed: () => {
-                    console.log("Preroll ad - adViewed");
-                    if (adViewed) {
-                        adViewed();
-                    }
-                },
-                afterAd: () => {
-                    console.log("Preroll ad - afterAd (only if ad shown)");
-                    if (afterAd) {
-                        afterAd();
-                    }
-                },
-                adBreakDone: () => {
-                    console.log("Preroll ad - adBreakDone (always called)");
-                    // Update tracking data
-                    const tracking = this.getAdTracking();
-                    const newPrerollCount = (tracking?.prerollCount || 0) + 1;
-                    const newTotalPrerollCount =
-                        (tracking?.totalPrerollCount || 0) + 1;
+            if (window.adBreak) {
+                const prerollOption = {
+                    type: "preroll",
+                    beforeAd: () => {
+                        console.log("Preroll ad - beforeAd");
+                        if (beforeAd) {
+                            beforeAd();
+                        }
+                    },
+                    adDismissed: () => {
+                        console.log("Preroll ad - adDismissed");
+                        if (adDismissed) {
+                            adDismissed();
+                        }
+                    },
+                    adViewed: () => {
+                        console.log("Preroll ad - adViewed");
+                        if (adViewed) {
+                            adViewed();
+                        }
+                    },
+                    afterAd: () => {
+                        console.log("Preroll ad - afterAd (only if ad shown)");
+                        if (afterAd) {
+                            afterAd();
+                        }
+                    },
+                    adBreakDone: () => {
+                        console.log("Preroll ad - adBreakDone (always called)");
+                        // Update tracking data
+                        const tracking = this.getAdTracking();
+                        const newPrerollCount =
+                            (tracking?.prerollCount || 0) + 1;
+                        const newTotalPrerollCount =
+                            (tracking?.totalPrerollCount || 0) + 1;
 
-                    this.updateAdTracking({
-                        prerollCount: newPrerollCount,
-                        totalPrerollCount: newTotalPrerollCount,
-                        missedVignetteCount: 0,
-                        currentCycle: "preroll",
-                    });
-
-                    // Check if preroll threshold reached, enter vignette cycle
-                    const config = this.getVignetteConfig();
-                    if (
-                        config &&
-                        newPrerollCount >= config.prerollToVignette.count &&
-                        config.prerollToVignette.count > 0
-                    ) {
                         this.updateAdTracking({
-                            vignetteCount: 0,
-                            prerollCount: 0,
-                            currentCycle: "vignette",
+                            prerollCount: newPrerollCount,
+                            totalPrerollCount: newTotalPrerollCount,
+                            missedVignetteCount: 0,
+                            currentCycle: "preroll",
                         });
-                        console.log(
-                            "Preroll cycle done, entering vignette cycle"
-                        );
-                    }
 
-                    if (adBreakDone) {
-                        adBreakDone();
-                    }
-                },
-            };
+                        // Check if preroll threshold reached, enter vignette cycle
+                        const config = this.getVignetteConfig();
+                        if (
+                            config &&
+                            newPrerollCount >= config.prerollToVignette.count &&
+                            config.prerollToVignette.count > 0
+                        ) {
+                            this.updateAdTracking({
+                                vignetteCount: 0,
+                                prerollCount: 0,
+                                currentCycle: "vignette",
+                            });
+                            console.log(
+                                "Preroll cycle done, entering vignette cycle"
+                            );
+                        }
 
-            window.adsbygoogle.push(prerollOption);
-            console.log("Preroll ad triggered");
+                        if (adBreakDone) {
+                            adBreakDone();
+                        }
+                    },
+                };
+
+                window.adBreak(prerollOption);
+                console.log("Preroll ad triggered");
+            } else {
+                console.error("window.adBreak is not available");
+            }
         };
 
         // Use retry mechanism
@@ -914,12 +928,12 @@ export const AdSense = {
      * Preload ads
      */
     preload() {
-        window.adsbygoogle = window.adsbygoogle || [];
-        // AdSense handles preload automatically
-        window.adsbygoogle.push({
-            sound: "on",
-            preloadAdBreaks: "on",
-        });
+        if (this.config && this.config.preloadAd) {
+            window.adConfig({
+                sound: "on",
+                preloadAdBreaks: "on",
+            });
+        }
     },
 
     /**
@@ -1109,10 +1123,6 @@ export const AdSense = {
      * @param {Function} options.adBreakDone - Callback when ad break done (always called)
      */
     showReward(options = {}) {
-        if (!window.adsbygoogle) {
-            window.adsbygoogle = [];
-        }
-
         const config = this.config.adsenseConfig || {};
         const rewardConfig = config.rewardConfig || {};
 
@@ -1128,52 +1138,56 @@ export const AdSense = {
         const adBreakDone = options.adBreakDone || rewardConfig.adBreakDone;
 
         try {
-            const afgOption = {
-                type: "reward",
-                name: rewardName,
-                beforeAd: () => {
-                    console.log("Reward ad - beforeAd");
-                    if (beforeAd) {
-                        beforeAd();
-                    }
-                },
-                beforeReward: (showAdFn) => {
-                    console.log("Reward ad - beforeReward");
-                    if (beforeReward) {
-                        beforeReward(showAdFn);
-                    } else if (showAdFn) {
-                        // Default call showAdFn if no callback provided
-                        showAdFn();
-                    }
-                },
-                adDismissed: () => {
-                    console.log("Reward ad - adDismissed");
-                    if (adDismissed) {
-                        adDismissed();
-                    }
-                },
-                adViewed: () => {
-                    console.log("Reward ad - adViewed");
-                    if (adViewed) {
-                        adViewed();
-                    }
-                },
-                afterAd: () => {
-                    console.log("Reward ad - afterAd (only if ad shown)");
-                    if (afterAd) {
-                        afterAd();
-                    }
-                },
-                adBreakDone: () => {
-                    console.log("Reward ad - adBreakDone (always called)");
-                    if (adBreakDone) {
-                        adBreakDone();
-                    }
-                },
-            };
+            if (window.adBreak) {
+                const afgOption = {
+                    type: "reward",
+                    name: rewardName,
+                    beforeAd: () => {
+                        console.log("Reward ad - beforeAd");
+                        if (beforeAd) {
+                            beforeAd();
+                        }
+                    },
+                    beforeReward: (showAdFn) => {
+                        console.log("Reward ad - beforeReward");
+                        if (beforeReward) {
+                            beforeReward(showAdFn);
+                        } else if (showAdFn) {
+                            // Default call showAdFn if no callback provided
+                            showAdFn();
+                        }
+                    },
+                    adDismissed: () => {
+                        console.log("Reward ad - adDismissed");
+                        if (adDismissed) {
+                            adDismissed();
+                        }
+                    },
+                    adViewed: () => {
+                        console.log("Reward ad - adViewed");
+                        if (adViewed) {
+                            adViewed();
+                        }
+                    },
+                    afterAd: () => {
+                        console.log("Reward ad - afterAd (only if ad shown)");
+                        if (afterAd) {
+                            afterAd();
+                        }
+                    },
+                    adBreakDone: () => {
+                        console.log("Reward ad - adBreakDone (always called)");
+                        if (adBreakDone) {
+                            adBreakDone();
+                        }
+                    },
+                };
 
-            window.adsbygoogle.push(afgOption);
-            console.log("Reward ad triggered:", rewardName);
+                window.adBreak(afgOption);
+                console.log("Reward ad triggered:", rewardName);
+            } else {
+                console.error("window.adBreak is not available");
+            }
         } catch (e) {
             console.error("Reward ad trigger failed:", e);
         }
