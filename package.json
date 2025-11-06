@@ -1,6 +1,6 @@
 {
     "name": "c3-sdk",
-    "version": "1.0.12",
+    "version": "1.0.13",
     "description": "A lightweight JavaScript SDK for Google AdSense, Google Publisher Tag (GPT), and Google AdSense for Search (AFS) integration",
     "main": "dist/c3-sdk.umd.js",
     "module": "dist/c3-sdk.es.js",
