@@ -222,6 +222,36 @@ c3.AdSense.triggerPreroll({
 
 `showReward()` 的别名。手动触发激励广告。
 
+#### `c3.AdSense.refresh(identifier)`
+
+刷新广告。每个广告实例都有唯一 ID，允许具有相同 `adSlotId` 的多个广告独立刷新。
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `identifier` | `string\|Object\|undefined` | 广告位 ID、唯一广告 ID（以 `c3_ad_` 开头）、广告对象，或 `undefined` 刷新所有 |
+
+**示例：**
+
+```javascript
+// 刷新所有广告
+c3.AdSense.refresh();
+
+// 刷新所有匹配 adSlotId 的广告
+c3.AdSense.refresh("1234567890");
+
+// 通过广告对象刷新特定广告
+const ad = c3.AdSense.createAd({
+  adSlotId: "1234567890",
+  containerId: "ad1"
+});
+c3.AdSense.refresh(ad);
+
+// 通过唯一 ID 刷新特定广告
+c3.AdSense.refresh(ad.id); // ad.id 类似 "c3_ad_1234567890_1_abc123"
+```
+
+**注意：** 使用 `autoRefreshSeconds` 时，每个广告实例会使用其唯一 ID 自动刷新，确保具有相同 `adSlotId` 的多个广告独立刷新。
+
 ### GPT API
 
 #### `c3.GPT.defineSlot(options)`
@@ -321,6 +351,30 @@ c3.AdSense.createAd({
   lazyLoad: true,        // 进入视口时加载
   autoRefreshSeconds: 30 // 每 30 秒刷新
 });
+```
+
+### 多个相同 adSlotId 的广告
+
+```javascript
+// 创建多个相同 adSlotId 的广告
+const ad1 = c3.AdSense.createAd({
+  adSlotId: "1234567890",
+  containerId: "ad-container-1",
+  autoRefreshSeconds: 30 // 每 30 秒使用唯一 ID 刷新
+});
+
+const ad2 = c3.AdSense.createAd({
+  adSlotId: "1234567890", // 相同的 adSlotId
+  containerId: "ad-container-2",
+  autoRefreshSeconds: 60 // 每 60 秒使用唯一 ID 刷新
+});
+
+// 每个广告独立刷新
+// 刷新特定广告
+c3.AdSense.refresh(ad1);
+
+// 刷新所有具有此 adSlotId 的广告
+c3.AdSense.refresh("1234567890");
 ```
 
 ## 🛠️ 开发

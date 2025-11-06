@@ -13,6 +13,7 @@ export const AdSense = {
         this.pubId = config.pubId;
         this.ads = [];
         this.hashChangeHandler = null;
+        this.adCounter = 0; // Counter for unique ad IDs
 
         // Setup listener if vignette/preroll management enabled
         const vignetteConfig =
@@ -759,14 +760,56 @@ export const AdSense = {
         // Set ad attributes
         ins.setAttribute("data-ad-client", this.pubId);
         ins.setAttribute("data-ad-slot", adSlotId);
-        ins.setAttribute("data-ad-format", adFormat);
 
         if (fullWidthResponsive) {
             ins.setAttribute("data-full-width-responsive", "true");
+            ins.setAttribute("data-ad-format", adFormat);
         }
 
         // Append to container
         container.appendChild(ins);
+
+        // Generate unique ad ID
+        const adId = `c3_ad_${Date.now()}_${++this.adCounter}_${Math.random()
+            .toString(36)
+            .substr(2, 9)}`;
+
+        // Helper function to create ad element
+        const createAdElement = () => {
+            const newIns = document.createElement("ins");
+            newIns.className = "adsbygoogle";
+            newIns.style.display = display;
+
+            // Set ad width and height
+            if (width !== undefined) {
+                if (typeof width === "number") {
+                    newIns.style.width = `${width}px`;
+                } else {
+                    newIns.style.width = width;
+                }
+            } else {
+                newIns.style.width = "100%";
+            }
+
+            if (height !== undefined) {
+                if (typeof height === "number") {
+                    newIns.style.height = `${height}px`;
+                } else {
+                    newIns.style.height = height;
+                }
+            }
+
+            // Set ad attributes
+            newIns.setAttribute("data-ad-client", this.pubId);
+            newIns.setAttribute("data-ad-slot", adSlotId);
+
+            if (fullWidthResponsive) {
+                newIns.setAttribute("data-full-width-responsive", "true");
+                newIns.setAttribute("data-ad-format", adFormat);
+            }
+
+            return newIns;
+        };
 
         // Load ad function
         const loadAd = () => {
@@ -777,10 +820,54 @@ export const AdSense = {
             }
         };
 
-        // Refresh ad function
+        // Refresh ad function - remove old element and create new one
         const refreshAd = () => {
             try {
-                (window.adsbygoogle = window.adsbygoogle || []).push({});
+                // Find ad object by unique ID (not adSlotId, as multiple ads can have same adSlotId)
+                const adIndex = this.ads.findIndex((a) => a.id === adId);
+                if (adIndex === -1) {
+                    console.warn("Ad not found, cannot refresh");
+                    return;
+                }
+
+                const currentAd = this.ads[adIndex];
+                const currentElement = currentAd.element;
+
+                // Get parent container
+                if (!currentElement || !currentElement.parentNode) {
+                    console.warn("Ad element has no parent, cannot refresh");
+                    return;
+                }
+
+                const parent = currentElement.parentNode;
+
+                // Remove old element
+                parent.removeChild(currentElement);
+
+                // Create new element with same attributes
+                const newIns = createAdElement();
+
+                // Replace in DOM
+                parent.appendChild(newIns);
+
+                // Update reference
+                currentAd.element = newIns;
+
+                // Disconnect old observer if exists
+                if (currentAd.observer) {
+                    currentAd.observer.disconnect();
+                    currentAd.observer = null;
+                }
+
+                // Re-observe if lazy load was enabled
+                if (lazyLoad) {
+                    currentAd.observer = lazyLoadAd(newIns, loadAd, {
+                        rootMargin: "50px",
+                    });
+                } else {
+                    // Load new ad
+                    loadAd();
+                }
             } catch (e) {
                 console.error("AdSense refresh failed:", e);
             }
@@ -801,6 +888,7 @@ export const AdSense = {
         }
 
         const adObject = {
+            id: adId, // Unique ad ID
             element: ins,
             adSlotId,
             containerId: containerId || "body",
@@ -808,6 +896,14 @@ export const AdSense = {
             autoRefreshSeconds,
             refreshTimer,
             observer,
+            // Store ad config for refresh
+            adFormat,
+            fullWidthResponsive,
+            width,
+            height,
+            display,
+            container,
+            refreshAd, // Store refresh function
         };
 
         this.ads.push(adObject);
@@ -830,31 +926,140 @@ export const AdSense = {
 
     /**
      * Refresh ad
-     * @param {string} adSlotId - Ad slot ID
+     * @param {string|Object} identifier - Ad slot ID, ad ID, or ad object
      */
-    refresh(adSlotId) {
-        if (!adSlotId) {
+    refresh(identifier) {
+        if (!identifier) {
             // Refresh all ads
             this.ads.forEach((ad) => {
-                if (ad.element && ad.element.parentNode) {
+                if (ad.refreshAd && typeof ad.refreshAd === "function") {
+                    ad.refreshAd();
+                } else {
+                    // Fallback: recreate ad element
+                    this._recreateAd(ad);
+                }
+            });
+        } else if (typeof identifier === "object" && identifier.id) {
+            // Refresh specific ad by ad object
+            const ad = this.ads.find((a) => a.id === identifier.id);
+            if (ad) {
+                if (ad.refreshAd && typeof ad.refreshAd === "function") {
+                    ad.refreshAd();
+                } else {
+                    this._recreateAd(ad);
+                }
+            }
+        } else if (typeof identifier === "string") {
+            // Check if it's an ad ID (starts with c3_ad_)
+            if (identifier.startsWith("c3_ad_")) {
+                // Refresh by unique ad ID
+                const ad = this.ads.find((a) => a.id === identifier);
+                if (ad) {
+                    if (ad.refreshAd && typeof ad.refreshAd === "function") {
+                        ad.refreshAd();
+                    } else {
+                        this._recreateAd(ad);
+                    }
+                }
+            } else {
+                // Refresh all ads with matching adSlotId (multiple ads can have same adSlotId)
+                const matchingAds = this.ads.filter(
+                    (a) => a.adSlotId === identifier
+                );
+                matchingAds.forEach((ad) => {
+                    if (ad.refreshAd && typeof ad.refreshAd === "function") {
+                        ad.refreshAd();
+                    } else {
+                        this._recreateAd(ad);
+                    }
+                });
+            }
+        }
+    },
+
+    /**
+     * Recreate ad element (internal helper)
+     * @param {Object} ad - Ad object
+     */
+    _recreateAd(ad) {
+        if (!ad.element || !ad.element.parentNode) {
+            console.warn("Ad element not found, cannot refresh");
+            return;
+        }
+
+        try {
+            const parent = ad.element.parentNode;
+            const container = ad.container || parent;
+
+            // Remove old element
+            parent.removeChild(ad.element);
+
+            // Create new element
+            const newIns = document.createElement("ins");
+            newIns.className = "adsbygoogle";
+            newIns.style.display = ad.display || "inline-block";
+
+            // Set width
+            if (ad.width !== undefined) {
+                if (typeof ad.width === "number") {
+                    newIns.style.width = `${ad.width}px`;
+                } else {
+                    newIns.style.width = ad.width;
+                }
+            } else {
+                newIns.style.width = "100%";
+            }
+
+            // Set height
+            if (ad.height !== undefined) {
+                if (typeof ad.height === "number") {
+                    newIns.style.height = `${ad.height}px`;
+                } else {
+                    newIns.style.height = ad.height;
+                }
+            }
+
+            // Set attributes
+            newIns.setAttribute("data-ad-client", this.pubId);
+            newIns.setAttribute("data-ad-slot", ad.adSlotId);
+
+            if (ad.fullWidthResponsive) {
+                newIns.setAttribute("data-full-width-responsive", "true");
+                newIns.setAttribute("data-ad-format", ad.adFormat || "auto");
+            }
+
+            // Append to container
+            container.appendChild(newIns);
+
+            // Update reference
+            ad.element = newIns;
+
+            // Disconnect old observer
+            if (ad.observer) {
+                ad.observer.disconnect();
+                ad.observer = null;
+            }
+
+            // Re-observe if lazy load was enabled
+            if (ad.lazyLoad) {
+                const loadAd = () => {
                     try {
                         (window.adsbygoogle = window.adsbygoogle || []).push(
                             {}
                         );
                     } catch (e) {
-                        console.error("AdSense refresh failed:", e);
+                        console.error("AdSense push failed:", e);
                     }
-                }
-            });
-        } else {
-            const ad = this.ads.find((a) => a.adSlotId === adSlotId);
-            if (ad && ad.element && ad.element.parentNode) {
-                try {
-                    (window.adsbygoogle = window.adsbygoogle || []).push({});
-                } catch (e) {
-                    console.error("AdSense refresh failed:", e);
-                }
+                };
+                ad.observer = lazyLoadAd(newIns, loadAd, {
+                    rootMargin: "50px",
+                });
+            } else {
+                // Load immediately
+                (window.adsbygoogle = window.adsbygoogle || []).push({});
             }
+        } catch (e) {
+            console.error("AdSense refresh failed:", e);
         }
     },
 

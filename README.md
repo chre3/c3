@@ -222,6 +222,36 @@ c3.AdSense.triggerPreroll({
 
 Alias for `showReward()`. Manually trigger rewarded ad.
 
+#### `c3.AdSense.refresh(identifier)`
+
+Refresh ad(s). Each ad instance has a unique ID, allowing multiple ads with the same `adSlotId` to be refreshed independently.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `identifier` | `string\|Object\|undefined` | Ad slot ID, unique ad ID (starts with `c3_ad_`), ad object, or `undefined` to refresh all |
+
+**Examples:**
+
+```javascript
+// Refresh all ads
+c3.AdSense.refresh();
+
+// Refresh all ads with matching adSlotId
+c3.AdSense.refresh("1234567890");
+
+// Refresh specific ad by ad object
+const ad = c3.AdSense.createAd({
+  adSlotId: "1234567890",
+  containerId: "ad1"
+});
+c3.AdSense.refresh(ad);
+
+// Refresh specific ad by unique ID
+c3.AdSense.refresh(ad.id); // ad.id is like "c3_ad_1234567890_1_abc123"
+```
+
+**Note:** When using `autoRefreshSeconds`, each ad instance automatically refreshes using its unique ID, ensuring multiple ads with the same `adSlotId` refresh independently.
+
 ### GPT API
 
 #### `c3.GPT.defineSlot(options)`
@@ -321,6 +351,30 @@ c3.AdSense.createAd({
   lazyLoad: true,        // Load when in viewport
   autoRefreshSeconds: 30 // Refresh every 30s
 });
+```
+
+### Multiple Ads with Same adSlotId
+
+```javascript
+// Create multiple ads with the same adSlotId
+const ad1 = c3.AdSense.createAd({
+  adSlotId: "1234567890",
+  containerId: "ad-container-1",
+  autoRefreshSeconds: 30 // Refreshes every 30s using unique ID
+});
+
+const ad2 = c3.AdSense.createAd({
+  adSlotId: "1234567890", // Same adSlotId
+  containerId: "ad-container-2",
+  autoRefreshSeconds: 60 // Refreshes every 60s using unique ID
+});
+
+// Each ad refreshes independently
+// Refresh specific ad
+c3.AdSense.refresh(ad1);
+
+// Refresh all ads with this adSlotId
+c3.AdSense.refresh("1234567890");
 ```
 
 ## 🛠️ Development
