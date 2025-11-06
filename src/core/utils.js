@@ -15,8 +15,12 @@ export function loadScript(src, options = {}) {
 
         const script = document.createElement("script");
         script.src = src;
-        script.setAttribute("data-ad-client", options.pubId);
-        script.setAttribute("data-ad-frequency-hint", options.hint);
+        script.async = options.async;
+
+        if (options.pubId) {
+            script.setAttribute("data-ad-client", options.pubId);
+            script.setAttribute("data-ad-frequency-hint", options.hint);
+        }
 
         if (options.crossOrigin) {
             script.setAttribute("crossorigin", options.crossOrigin);
