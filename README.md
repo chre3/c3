@@ -176,6 +176,52 @@ c3.AdSense.showReward({
 });
 ```
 
+#### `c3.AdSense.showPreroll(options)`
+
+Show preroll ad manually.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `beforeAd` | `Function` | ❌ | Callback before ad shows |
+| `adDismissed` | `Function` | ❌ | Callback when ad dismissed |
+| `adViewed` | `Function` | ❌ | Callback when ad viewed |
+| `afterAd` | `Function` | ❌ | Callback after ad (only if ad shown) |
+| `adBreakDone` | `Function` | ❌ | Callback when ad break done (always called) |
+
+**Example:**
+
+```javascript
+c3.AdSense.showPreroll({
+  beforeAd: () => {
+    console.log("Preroll will show");
+  },
+  adViewed: () => {
+    console.log("Preroll viewed");
+  },
+  adBreakDone: () => {
+    console.log("Preroll completed");
+  }
+});
+```
+
+#### `c3.AdSense.triggerPreroll(options)`
+
+Alias for `showPreroll()`. Manually trigger preroll ad.
+
+**Example:**
+
+```javascript
+c3.AdSense.triggerPreroll({
+  adBreakDone: () => {
+    console.log("Preroll done");
+  }
+});
+```
+
+#### `c3.AdSense.triggerReward(options)`
+
+Alias for `showReward()`. Manually trigger rewarded ad.
+
 ### GPT API
 
 #### `c3.GPT.defineSlot(options)`
@@ -242,6 +288,28 @@ c3.init({
 // Or manually trigger
 c3.AdSense.showReward({
   adViewed: () => giveReward()
+});
+```
+
+### AdSense Manual Preroll
+
+```javascript
+// Manually trigger preroll ad
+c3.AdSense.showPreroll({
+  beforeAd: () => {
+    console.log("About to show preroll");
+  },
+  adViewed: () => {
+    console.log("User viewed preroll");
+  },
+  adBreakDone: () => {
+    console.log("Preroll completed");
+  }
+});
+
+// Or use alias
+c3.AdSense.triggerPreroll({
+  adBreakDone: () => console.log("Done")
 });
 ```
 

@@ -105,7 +105,7 @@ export const AdSense = {
 
             // Trigger preroll if threshold reached
             if (newMissedCount >= config.maxVignetteMissed) {
-                this.showPreroll();
+                this._internalShowPreroll();
             }
         }
     },
@@ -276,7 +276,7 @@ export const AdSense = {
                 tracking.currentCycle === "vignette"
             ) {
                 setTimeout(() => {
-                    this.showPreroll();
+                    this._internalShowPreroll();
                 }, 100);
             }
         }
@@ -317,7 +317,7 @@ export const AdSense = {
         }
 
         if (shouldShowPrerollForMissed) {
-            this.showPreroll();
+            this._internalShowPreroll();
             return true;
         }
 
@@ -325,9 +325,9 @@ export const AdSense = {
     },
 
     /**
-     * Show preroll ad
+     * Internal method to show preroll ad (for automatic triggers)
      */
-    showPreroll() {
+    _internalShowPreroll() {
         if (!window.adsbygoogle) {
             window.adsbygoogle = [];
         }
@@ -363,13 +363,108 @@ export const AdSense = {
                             prerollCount: 0,
                             currentCycle: "vignette",
                         });
-                        console.log("Preroll cycle done, entering vignette cycle");
+                        console.log(
+                            "Preroll cycle done, entering vignette cycle"
+                        );
                     }
                 },
             });
             console.log("Preroll triggered");
         } catch (e) {
             console.error("Preroll trigger failed:", e);
+        }
+    },
+
+    /**
+     * Manually show preroll ad
+     * @param {Object} options - Preroll ad options
+     * @param {Function} options.beforeAd - Callback before ad shows
+     * @param {Function} options.adDismissed - Callback when ad dismissed
+     * @param {Function} options.adViewed - Callback when ad viewed
+     * @param {Function} options.afterAd - Callback after ad (only if ad shown)
+     * @param {Function} options.adBreakDone - Callback when ad break done (always called)
+     */
+    showPreroll(options = {}) {
+        if (!window.adsbygoogle) {
+            window.adsbygoogle = [];
+        }
+
+        // Callback functions
+        const beforeAd = options.beforeAd;
+        const adDismissed = options.adDismissed;
+        const adViewed = options.adViewed;
+        const afterAd = options.afterAd;
+        const adBreakDone = options.adBreakDone;
+
+        try {
+            const prerollOption = {
+                type: "preroll",
+                beforeAd: () => {
+                    console.log("Preroll ad - beforeAd");
+                    if (beforeAd) {
+                        beforeAd();
+                    }
+                },
+                adDismissed: () => {
+                    console.log("Preroll ad - adDismissed");
+                    if (adDismissed) {
+                        adDismissed();
+                    }
+                },
+                adViewed: () => {
+                    console.log("Preroll ad - adViewed");
+                    if (adViewed) {
+                        adViewed();
+                    }
+                },
+                afterAd: () => {
+                    console.log("Preroll ad - afterAd (only if ad shown)");
+                    if (afterAd) {
+                        afterAd();
+                    }
+                },
+                adBreakDone: () => {
+                    console.log("Preroll ad - adBreakDone (always called)");
+                    // Update tracking data
+                    const tracking = this.getAdTracking();
+                    const newPrerollCount = (tracking?.prerollCount || 0) + 1;
+                    const newTotalPrerollCount =
+                        (tracking?.totalPrerollCount || 0) + 1;
+
+                    this.updateAdTracking({
+                        prerollCount: newPrerollCount,
+                        totalPrerollCount: newTotalPrerollCount,
+                        missedVignetteCount: 0,
+                        currentCycle: "preroll",
+                    });
+
+                    // Check if preroll threshold reached, enter vignette cycle
+                    const config = this.getVignetteConfig();
+                    if (
+                        config &&
+                        newPrerollCount >= config.prerollToVignette.count &&
+                        config.prerollToVignette.count > 0
+                    ) {
+                        this.updateAdTracking({
+                            vignetteCount: 0,
+                            prerollCount: 0,
+                            currentCycle: "vignette",
+                        });
+                        console.log(
+                            "Preroll cycle done, entering vignette cycle"
+                        );
+                    }
+
+                    if (adBreakDone) {
+                        adBreakDone();
+                    }
+                },
+            };
+
+            window.adsbygoogle.push(prerollOption);
+            console.log("Preroll ad triggered");
+        } catch (e) {
+            console.error("Preroll ad trigger failed:", e);
         }
     },
 
@@ -389,7 +484,7 @@ export const AdSense = {
         const beforePrerollCount = tracking?.prerollCount || 0;
 
         // Trigger preroll
-        this.showPreroll();
+        this._internalShowPreroll();
 
         // Wait for preroll completion (polling count changes)
         const checkInterval = setInterval(() => {
@@ -454,7 +549,7 @@ export const AdSense = {
             console.log(
                 `Initial preroll triggered after ${config.initialPrerollDelay}s`
             );
-            this.showPreroll();
+            this._internalShowPreroll();
         }, config.initialPrerollDelay * 1000);
     },
 
@@ -719,10 +814,11 @@ export const AdSense = {
     },
 
     /**
-     * Manually trigger preroll
+     * Manually trigger preroll (alias for showPreroll)
+     * @param {Object} options - Preroll ad options
      */
-    triggerPreroll() {
-        this.showPreroll();
+    triggerPreroll(options = {}) {
+        this.showPreroll(options);
     },
 
     /**

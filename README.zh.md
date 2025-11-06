@@ -176,6 +176,52 @@ c3.AdSense.showReward({
 });
 ```
 
+#### `c3.AdSense.showPreroll(options)`
+
+手动显示插屏广告。
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `beforeAd` | `Function` | ❌ | 广告显示前回调 |
+| `adDismissed` | `Function` | ❌ | 广告关闭回调 |
+| `adViewed` | `Function` | ❌ | 广告观看回调 |
+| `afterAd` | `Function` | ❌ | 广告后回调（仅广告显示时调用） |
+| `adBreakDone` | `Function` | ❌ | 广告中断完成回调（始终调用） |
+
+**示例：**
+
+```javascript
+c3.AdSense.showPreroll({
+  beforeAd: () => {
+    console.log("即将显示插屏广告");
+  },
+  adViewed: () => {
+    console.log("用户观看了插屏广告");
+  },
+  adBreakDone: () => {
+    console.log("插屏广告完成");
+  }
+});
+```
+
+#### `c3.AdSense.triggerPreroll(options)`
+
+`showPreroll()` 的别名。手动触发插屏广告。
+
+**示例：**
+
+```javascript
+c3.AdSense.triggerPreroll({
+  adBreakDone: () => {
+    console.log("插屏完成");
+  }
+});
+```
+
+#### `c3.AdSense.triggerReward(options)`
+
+`showReward()` 的别名。手动触发激励广告。
+
 ### GPT API
 
 #### `c3.GPT.defineSlot(options)`
@@ -242,6 +288,28 @@ c3.init({
 // 或手动触发
 c3.AdSense.showReward({
   adViewed: () => giveReward()
+});
+```
+
+### AdSense 手动插屏
+
+```javascript
+// 手动触发插屏广告
+c3.AdSense.showPreroll({
+  beforeAd: () => {
+    console.log("即将显示插屏");
+  },
+  adViewed: () => {
+    console.log("用户观看了插屏");
+  },
+  adBreakDone: () => {
+    console.log("插屏完成");
+  }
+});
+
+// 或使用别名
+c3.AdSense.triggerPreroll({
+  adBreakDone: () => console.log("完成")
 });
 ```
 
