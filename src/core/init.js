@@ -123,11 +123,11 @@ export function init(options = {}) {
 function initializeAdSense() {
     // Load AdSense script
     return loadScript(
-        "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" +
-            config.pubId,
+        "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js",
         {
             async: true,
-            crossOrigin: "anonymous",
+            hint: "10s",
+            pubId: config.pubId,
         }
     )
         .then(() => {
