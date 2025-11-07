@@ -141,18 +141,20 @@ function initializeAdSense() {
         };
     }
 
-    if (typeof window !== "undefined") {
-        window.adBreak = window.adConfig = function (o) {
-            window.adsbygoogle.push(o);
-        };
+    window.adBreak = window.adConfig = function (o) {
+        window.adsbygoogle.push(o);
+    };
+
+    if (config.preloadAd) {
+        window.adConfig({
+            sound: "on",
+            preloadAdBreaks: "on",
+        });
     }
 
     return loadScript(scriptUrl, scriptOptions)
         .then(() => {
             AdSense.init(config);
-            if (config.preloadAd) {
-                AdSense.preload();
-            }
             console.log("C3 SDK initialized", config);
             return Promise.resolve();
         })

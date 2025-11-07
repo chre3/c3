@@ -920,12 +920,6 @@ export const AdSense = {
     /**
      * Preload ads
      */
-    preload() {
-        window.adConfig({
-            sound: "on",
-            preloadAdBreaks: "on",
-        });
-    },
 
     /**
      * Refresh ad
